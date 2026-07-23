@@ -29,6 +29,11 @@ Student machines are all **Windows**. Per machine:
 2. Open `solution/` in OpenCode (*File → Open Folder*). This first open
    auto-installs `@opencode-ai/plugin` into `.opencode/` — **it needs
    internet once per machine**; students never install anything manually.
+   The auto-install runs per PROJECT FOLDER, so repeat the open for
+   `starter/` and, if you will demo live, each `demos/m*/` folder.
+   (Verified: the desktop does NOT install on message-send, only on
+   project open — if you see `Cannot find package '@opencode-ai/plugin'`,
+   reopen the folder and wait a few seconds before the first message.)
 3. Pick a free model (Big Pickle) and send one test message
    (*"How is the fleet?"*) — confirm it answers.
 4. Run the Module 4 agent once (see below) and confirm all tickets end

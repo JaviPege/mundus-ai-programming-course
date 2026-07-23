@@ -38,6 +38,9 @@ demos/                          ← pre-fabricated demo sessions, one folder per
    The first time a project is opened, OpenCode auto-installs its plugin
    dependency (`@opencode-ai/plugin`) into `.opencode/` — this needs
    internet **once per machine**; there is nothing else to install.
+   If you ever see `Cannot find package '@opencode-ai/plugin'`: close
+   OpenCode completely and reopen the folder, then wait a few seconds
+   before sending your first message (the install runs on project open).
 4. **Pick a free model** in the model selector — e.g. **Big Pickle**.
 5. **Start the guided tutorial**: type `/module-1` in the chat. The
    `/module-1` … `/module-4` commands turn the AI into your step-by-step
