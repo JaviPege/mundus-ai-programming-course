@@ -1,6 +1,6 @@
 /**
  * Generates: AI-EBike-Fleet-Manager-Workshop.pptx (repo root)
- * Source script: docs/WORKSHOP_SLIDES.md (26 slides incl. closing)
+ * Source script: docs/WORKSHOP_SLIDES.md (20 slides incl. closing)
  * Brand: xpegy-presentations skill (references/components.md + brand.md)
  * Fonts: Arial Black / Arial (universal compatibility — classroom Windows machines)
  *
@@ -244,55 +244,6 @@ function addTableSlide(pptx, { title, headers, rows, colW, note }) {
   return slide;
 }
 
-function addServiceFlowSlide(pptx, { title, steps, activeIndex = 0 }) {
-  const slide = pptx.addSlide({ masterName: "CONTENT" });
-  addLogo(slide);
-  slideTitle(slide, title);
-
-  const count = steps.length;
-  const gap = 0.3;
-  const cardW = (12.33 - (count - 1) * gap) / count;
-  const cardH = 4.2;
-
-  steps.forEach((step, i) => {
-    const xPos = 0.5 + i * (cardW + gap);
-    const yPos = 1.5;
-    const isActive = i === activeIndex;
-
-    slide.addShape(pptx.ShapeType.roundRect, {
-      x: xPos, y: yPos, w: cardW, h: cardH,
-      fill: { color: isActive ? X.GREEN : X.WHITE },
-      line: isActive ? undefined : { color: X.GREEN, width: 1.5 },
-      rectRadius: 0.15
-    });
-
-    slide.addText(String(i + 1).padStart(2, "0"), {
-      x: xPos, y: yPos + 0.2, w: cardW, h: 0.8,
-      fontSize: 36, fontFace: FONT.TITLE,
-      color: isActive ? X.WHITE : X.GREEN,
-      align: "center", valign: "middle"
-    });
-
-    slide.addText(step.title, {
-      x: xPos + 0.2, y: yPos + 1.1, w: cardW - 0.4, h: 0.6,
-      fontSize: 16, fontFace: FONT.BODY, bold: true,
-      color: isActive ? X.WHITE : X.BLACK,
-      align: "center", valign: "middle"
-    });
-
-    if (step.description) {
-      slide.addText(step.description, {
-        x: xPos + 0.2, y: yPos + 1.8, w: cardW - 0.4, h: 2.0,
-        fontSize: 12, fontFace: FONT.BODY,
-        color: isActive ? X.WHITE : X.GRAY,
-        align: "center", valign: "top"
-      });
-    }
-  });
-
-  return slide;
-}
-
 function addClosingSlide(pptx, { title, cta, contact }) {
   const slide = pptx.addSlide({ masterName: "CLOSING" });
   addLogo(slide, { dark: true });
@@ -370,6 +321,39 @@ function para(runs, opts = {}) {
   return merged;
 }
 
+// Consistent look for the recorded-demo slides:
+// header "Open <folder> → session <DEMO M…>", optional prompt code box,
+// "point out" bullets, and the "Then YOU: /module-N" handoff line.
+function addDemoSlide({ title, folder, session, prompt, promptH = 1.4, points, thenYou }) {
+  const slide = contentSlide(title);
+
+  // Folder + session header
+  slide.addText([
+    { text: "Open ", options: { fontSize: 14, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+    { text: folder, options: { fontSize: 14, fontFace: FONT.MONO, bold: true, color: X.BLACK } },
+    { text: "  →  session  ", options: { fontSize: 14, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+    { text: session, options: { fontSize: 14, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
+  ], { x: 0.5, y: 1.3, w: 12.33, h: 0.8, valign: "top" });
+
+  // Prompt code box (optional — M2 reuses the M1 prompt)
+  let pointsY = 2.3;
+  if (prompt) {
+    codeBox(slide, prompt, { x: 0.5, y: 2.1, w: 12.33, h: promptH, fontSize: 13 });
+    pointsY = 2.1 + promptH + 0.25;
+  }
+
+  // What to point out
+  slide.addText(points, { x: 0.5, y: pointsY, w: 12.33, h: 6.1 - pointsY, valign: "top", lineSpacingMultiple: 1.35 });
+
+  // Handoff line
+  slide.addText([
+    { text: "Then YOU:  ", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.BLACK } },
+    { text: thenYou, options: { fontSize: 16, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } }
+  ], { x: 0.5, y: 6.3, w: 12.33, h: 0.5 });
+
+  return slide;
+}
+
 // ---------------------------------------------------------------------------
 // Slides — content from docs/WORKSHOP_SLIDES.md (English on slides,
 // Spanish 🎤 notes via slide.addNotes)
@@ -383,13 +367,13 @@ function para(runs, opts = {}) {
     client: "Naiden Gerov Secondary School · Varna",
     date: "90 minutes · Hands-on"
   });
-  slide.addNotes("Bienvenida. Presentarse en una frase. Mensaje clave: \"no vengo a dar teoría; vais a gobernar un agente de IA real con código vuestro, dentro de la app OpenCode y con modelos gratis — sin cuentas, sin API keys, sin pagar nada\". La app gestiona una flota de bicis eléctricas. Preguntar a mano alzada: ¿quién ha usado ChatGPT? ¿quién ha usado un agente de código?");
+  slide.addNotes("Bienvenida. Presentarse en una frase. Mensaje clave: \"no vengo a dar teoría; vais a gobernar un agente de IA real dentro de la app OpenCode, con modelos gratis — sin cuentas, sin keys, sin compilar nada\". La app gestiona una flota de bicis eléctricas. Preguntar a mano alzada: ¿quién ha usado ChatGPT? ¿quién un agente de código?");
 }
 
-// --- Slide 2 — The mission (manual rich-text bullets, key phrases bold GREEN_DARK) ---
+// --- Slide 2 — How today works ---
 {
-  const slide = contentSlide("The mission");
-  slide.addText("Your mission today", {
+  const slide = contentSlide("How today works");
+  slide.addText("The practical contract", {
     x: 0.5, y: 1.4, w: 12.33, h: 0.5,
     fontSize: 18, fontFace: FONT.BODY, bold: true, color: X.BLACK
   });
@@ -397,47 +381,114 @@ function para(runs, opts = {}) {
   const tx = { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK };
   slide.addText([
     ...para([
-      { text: "Fix an AI that ", options: tx },
-      { text: "forgets everything", options: kw },
-      { text: " (context)", options: tx }
+      { text: "Short theory block", options: kw },
+      { text: " (~2 min per concept)", options: tx }
     ], bulletOpts({ fontSize: 16 })),
     ...para([
-      { text: "Stop it ", options: tx },
-      { text: "inventing data", options: kw },
-      { text: " (grounding)", options: tx }
+      { text: "I show you a ", options: tx },
+      { text: "recorded demo", options: kw },
+      { text: " — real prompts, real outputs", options: tx }
     ], bulletOpts({ fontSize: 16 })),
     ...para([
-      { text: "Give it ", options: tx },
-      { text: "hands", options: kw },
-      { text: " — tools that change a real database", options: tx }
+      { text: "YOU do it", options: kw },
+      { text: " — an AI tutor guides you: ", options: tx },
+      { text: "/module-1 … /module-4", options: { fontSize: 16, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } }
     ], bulletOpts({ fontSize: 16 })),
     ...para([
-      { text: "Turn it loose as an ", options: tx },
-      { text: "autonomous agent", options: kw }
+      { text: "No compiling, no SDKs — ", options: tx },
+      { text: "one app is all you need", options: kw }
     ], bulletOpts({ fontSize: 16 }))
   ], { x: 0.5, y: 2.1, w: 12.33, h: 4.2, valign: "top", lineSpacingMultiple: 1.4 });
-  slide.addNotes("Vender el arco narrativo: empiezan con un chat que olvida y alucina y acaban con un agente que resuelve tickets de mantenimiento solo. Todo ocurre dentro de OpenCode, pero lo que gobierna al modelo es código suyo: una regla, un plugin, dos tools y un agente. Cada fallo de la app es un concepto real de la ingeniería de LLMs.");
+  slide.addNotes("Vender el formato: taller MUY práctico. Ritmo de cada módulo: (1) mini-teoría de 2 minutos, (2) yo proyecto una demo GRABADA — cero riesgo de que el modelo falle en vivo, (3) vosotros lo hacéis con un tutor IA (`/module-N`) que guía paso a paso con pistas, sin hacer el trabajo por vosotros. Recalcar: no vamos a compilar nada en 90 minutos; la app es la única herramienta.");
 }
 
 // --- Slide 3 — Roadmap (table) ---
 {
   const slide = addTableSlide(pptx, {
     title: "Roadmap",
-    headers: ["Time", "Phase", "Concept"],
+    headers: ["Time", "Phase", "What happens"],
     rows: [
-      ["10'", "Setup", "OpenCode app, free models"],
+      ["10'", "Setup", "Install & first chat"],
+      ["15'", "How AI works", "LLM, models, tokens, context, effort"],
       ["15'", "Module 1", "Context window"],
-      ["20'", "Module 2", "Grounding & hooks"],
-      ["20'", "Module 3", "Custom tools"],
-      ["20'", "Module 4", "Autonomous agent"],
+      ["15'", "Module 2", "Grounding & hooks"],
+      ["15'", "Module 3", "Custom tools"],
+      ["15'", "Module 4", "Autonomous agent"],
       ["5'", "Wrap-up", "The big picture"]
     ],
-    colW: [1.5, 3.0, 7.83]
+    colW: [1.5, 3.2, 7.63]
   });
-  slide.addNotes("Enseñar los tiempos y avisar: \"los que terminéis antes, ayudáis al de al lado — enseñar es la mejor forma de aprender\". No hace falta memorizar nada: el trabajo está marcado en el proyecto con comentarios `TODO (Module N)`.");
+  slide.addNotes("Enseñar los tiempos: 4 módulos de 15 minutos, cada uno con su concepto, su demo grabada y su hands-on con tutor. Avisar: \"los que terminéis antes, ayudáis al de al lado — enseñar es la mejor forma de aprender\".");
 }
 
-// --- Slide 4 — What an LLM actually does (highlighted one-liner + 3 bullets) ---
+// --- Slide 4 — What to install… and what NOT ---
+{
+  const slide = contentSlide("What to install… and what NOT");
+  slide.addText([
+    ...para([{ text: "You need exactly TWO things:", options: { fontSize: 17, fontFace: FONT.BODY, bold: true, color: X.BLACK } }], { paraSpaceAfter: 10 }),
+    ...para([
+      { text: "1.  ", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: "OpenCode Desktop — Windows (x64)", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.BLACK } },
+      { text: "  →  ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "opencode.ai/download", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } }
+    ], { paraSpaceAfter: 8 }),
+    ...para([
+      { text: "2.  ", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: "This repo", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.BLACK } },
+      { text: "  →  ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "git clone <repo-url>", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
+      { text: "  ·  or  ·  GitHub → Code → Download ZIP", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ], { paraSpaceAfter: 8 }),
+    ...para([
+      { text: "Then: open ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "starter/", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
+      { text: " in OpenCode · pick a free model (", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "Big Pickle", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: ")", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ])
+  ], { x: 0.5, y: 1.5, w: 12.33, h: 2.9, valign: "top", lineSpacingMultiple: 1.3 });
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: 0.5, y: 4.5, w: 12.33, h: 1.0,
+    fill: { color: X.GREEN_BG }, rectRadius: 0.12
+  });
+  slide.addText("NOT needed:  NO compiler · NO SDK · NO Python · NO API key · NO account · NO billing", {
+    x: 0.7, y: 4.5, w: 11.93, h: 1.0,
+    fontSize: 15, fontFace: FONT.BODY, bold: true,
+    color: X.GREEN_DARK, align: "left", valign: "middle"
+  });
+  slide.addText("We will not compile any code — the agent IS the only tool you need.", {
+    x: 0.5, y: 5.8, w: 12.33, h: 0.6,
+    fontSize: 20, fontFace: FONT.BODY, bold: true, color: X.BLACK, align: "center"
+  });
+  slide.addNotes("Todos los equipos son Windows: \"OpenCode Desktop — Windows (x64)\" desde opencode.ai/download; tener los instaladores en USB por si el WiFi del aula va lento. El repo: `git clone` en PowerShell (Git for Windows) o el botón \"Code → Download ZIP\" y descomprimir. Leer la lista de NO en voz alta: no se compila nada en todo el taller — el agente es la única herramienta. Aviso: la primera apertura del proyecto auto-instala las dependencias del plugin (internet solo esa vez).");
+}
+
+// --- Slide 5 — Check it works ---
+{
+  const slide = contentSlide("Check it works");
+  slide.addText([
+    ...para([
+      { text: "1.  Open ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "starter/", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
+      { text: " → new session → send ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "Hello", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
+      { text: " → it answers ✅", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ], { paraSpaceAfter: 14 }),
+    ...para([
+      { text: "2.  Stuck later? Type ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "/module-1 … /module-4", options: { fontSize: 16, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } },
+      { text: " — the AI tutors you step by step", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ], { paraSpaceAfter: 14 }),
+    ...para([
+      { text: "3.  The ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "demos/", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
+      { text: " folders = the instructor's recorded demos (not for you… yet)", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ])
+  ], { x: 0.5, y: 1.8, w: 12.33, h: 3.8, valign: "top", lineSpacingMultiple: 1.35 });
+  slide.addNotes("Checkpoint: todo el mundo abre `starter/` (File → Open Folder), elige Big Pickle en el selector y recibe respuesta a un \"Hello\". Troubleshooting: la primera apertura auto-instala dependencias (internet una vez); si sale \"No provider available\" es rate limit del free tier — esperar ~30 s y reintentar, o cambiar a otro modelo gratis. Presentar los comandos tutor: guían paso a paso, dan pistas, no soluciones. Los `demos/` son solo del instructor. Fin del Setup (~10').");
+}
+
+// --- Slide 6 — What an LLM actually does ---
 {
   const slide = contentSlide("What an LLM actually does");
   slide.addShape(pptx.ShapeType.roundRect, {
@@ -454,10 +505,30 @@ function para(runs, opts = {}) {
     { text: "It does NOT remember you — no memory of its own", options: bulletOpts() },
     { text: "It cannot DO anything — every action is code running for it", options: bulletOpts() }
   ], { x: 0.5, y: 3.1, w: 12.33, h: 3.4, valign: "top", lineSpacingMultiple: 1.3 });
-  slide.addNotes("El concepto más importante del taller. El modelo es una función matemática gigante: `f(texto) → texto`. Cuando parezca que \"recuerda\", \"consulta\" o \"actúa\", en realidad es el software que lo rodea — hoy ese software es OpenCode más el código que ellos escribirán.");
+  slide.addNotes("El concepto más importante del taller (~2 min). El modelo es una función matemática gigante: `f(texto) → texto`. Cuando parezca que \"recuerda\", \"consulta\" o \"actúa\", en realidad es el software que lo rodea — hoy, OpenCode.");
 }
 
-// --- Slide 5 — Tokens (bullets + monospace example) ---
+// --- Slide 7 — Models ---
+{
+  const slide = contentSlide("Models");
+  slide.addText([
+    ...para([{ text: "Not all models are equal:", options: { fontSize: 17, fontFace: FONT.BODY, bold: true, color: X.BLACK } }], { paraSpaceAfter: 12 }),
+    ...para([{ text: "Big ↔ small · fast ↔ smart · free ↔ paid" }], bulletOpts({ fontSize: 16 })),
+    ...para([
+      { text: "Today: FREE models inside OpenCode — ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "Big Pickle", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " & friends", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ], bulletOpts({ fontSize: 16 })),
+    ...para([
+      { text: "Pick yours in the ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "model selector", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " (bottom of the window)", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ], bulletOpts({ fontSize: 16 }))
+  ], { x: 0.5, y: 1.7, w: 12.33, h: 4.2, valign: "top", lineSpacingMultiple: 1.4 });
+  slide.addNotes("Los tres ejes sin entrar en benchmarks: tamaño, velocidad, coste — todo es un trade-off. Hoy usamos los modelos gratuitos integrados en OpenCode. Enseñar el selector en la parte inferior de la ventana. Fallbacks si uno falla: `nemotron-3-ultra-free` · `deepseek-v4-flash-free`. (~2 min)");
+}
+
+// --- Slide 8 — Tokens ---
 {
   const slide = contentSlide("Tokens");
   slide.addText([
@@ -466,16 +537,16 @@ function para(runs, opts = {}) {
       { text: "tokens", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
     ], { paraSpaceAfter: 10 }),
     ...para([{ text: "1 token ≈ 4 characters ≈ ¾ of a word" }], bulletOpts({ fontSize: 16 })),
-    ...para([{ text: "Tokens are the \"currency\" of every model call" }], bulletOpts({ fontSize: 16 })),
-    ...para([{ text: "The context window has a token budget — watch the counter in the app" }], bulletOpts({ fontSize: 16 }))
+    ...para([{ text: "Tokens = the \"currency\" of every model call" }], bulletOpts({ fontSize: 16 })),
+    ...para([{ text: "Every call bills input + output — long conversations cost more" }], bulletOpts({ fontSize: 16 }))
   ], { x: 0.5, y: 1.5, w: 12.33, h: 2.6, valign: "top", lineSpacingMultiple: 1.3 });
   codeBox(slide,
     "\"Battery not charging\"  →  ~5 tokens",
     { x: 0.5, y: 4.4, w: 12.33, h: 1.0, fontSize: 14 });
-  slide.addNotes("Enseñar el ejemplo troceando la frase en la pizarra si hace falta. Por qué importa: el modelo tiene un límite máximo de tokens por llamada y los tokens son la \"moneda\" de las APIs (los modelos gratis de hoy también tienen límite). En el Módulo 1 verán el contador de tokens de la app crecer en vivo.");
+  slide.addNotes("Trocear la frase de ejemplo en la pizarra si hace falta. Los tokens son la unidad de TODO: de lo que envías y de lo que recibes — por eso las conversaciones largas cuestan más y por eso existe el presupuesto de la ventana (siguiente slide) y el comando `/compact` (Módulo 1). (~2 min)");
 }
 
-// --- Slide 6 — Context window & statelessness ---
+// --- Slide 9 — Context window & statelessness ---
 {
   const slide = contentSlide("Context window & statelessness");
   slide.addText([
@@ -487,511 +558,231 @@ function para(runs, opts = {}) {
     ...para([{ text: "Every call starts from ZERO — no memory between calls" }], bulletOpts({ fontSize: 16 })),
     ...para([{ text: "\"Memory\" = the app resending the conversation every time" }], bulletOpts({ fontSize: 16 }))
   ], { x: 0.5, y: 1.7, w: 12.33, h: 4.6, valign: "top", lineSpacingMultiple: 1.4 });
-  slide.addNotes("Hacer la analogía: es como hablar con alguien con amnesia total al que le pasas una transcripción escrita de toda la conversación en cada frase. Esto ES el Módulo 1 que experimentarán en 10 minutos. Que quede claro: la \"memoria\" del chat es software (la sesión), no magia.");
+  slide.addNotes("La analogía de la amnesia: hablar con alguien a quien hay que pasarle la transcripción completa de la conversación en cada frase. Esto ES el Módulo 1 que experimentarán en media hora. La \"memoria\" del chat es software (la sesión), no magia. (~2 min)");
 }
 
-// --- Slide 7 — Meet OpenCode (service flow: 4 cards) ---
+// --- Slide 10 — Reasoning effort ---
 {
-  const slide = addServiceFlowSlide(pptx, {
-    title: "Meet OpenCode",
-    steps: [
-      { title: "Session", description: "The context window — the model's \"memory\"" },
-      { title: "AGENTS.md", description: "Persistent project rules, read every session" },
-      { title: "Custom tools", description: "Function calling: real code the model can trigger" },
-      { title: "Agents", description: "Autonomous loops with a step budget" }
-    ],
-    activeIndex: 0
-  });
+  const slide = contentSlide("Reasoning effort");
   slide.addText([
-    { text: "The app is the middleware between you and the model. ", options: { fontSize: 14, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-    { text: "You don't just chat with it — you GOVERN it.", options: { fontSize: 14, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
-  ], { x: 0.5, y: 6.0, w: 12.33, h: 0.5, align: "center" });
-  slide.addNotes("El mapa del taller: cada fila es un módulo. OpenCode hace de middleware: empaqueta el contexto, ofrece las tools al modelo y ejecuta lo que el modelo pide. Ellos no van a programar un cliente desde cero; van a gobernar un agente profesional: reglas, guard, tools y agente autónomo.");
-}
-
-// --- Slide 8 — Install OpenCode ---
-{
-  const slide = contentSlide("Install OpenCode");
-  slide.addText([
+    ...para([{ text: "Models can \"think longer\" before answering", options: { fontSize: 17, fontFace: FONT.BODY, bold: true, color: X.BLACK } }], { paraSpaceAfter: 12 }),
     ...para([
-      { text: "1.  Go to ", options: { fontSize: 18, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "opencode.ai/download", options: { fontSize: 18, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
-      { text: " → ", options: { fontSize: 18, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "OpenCode Desktop — Windows (x64)", options: { fontSize: 18, fontFace: FONT.BODY, bold: true, color: X.BLACK } }
-    ], { paraSpaceAfter: 14 }),
-    ...para([{ text: "2.  Install & launch", options: { fontSize: 18, fontFace: FONT.BODY, color: X.GRAY_DARK } }], { paraSpaceAfter: 24 }),
-    ...para([{ text: "Free models included:  NO account · NO API key · NO billing", options: { fontSize: 18, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }], { paraSpaceAfter: 12 }),
-    ...para([{ text: "First project open auto-installs plugin dependencies — internet needed ONCE", options: { fontSize: 14, fontFace: FONT.BODY, italic: true, color: X.GRAY } }])
-  ], { x: 0.5, y: 1.9, w: 12.33, h: 3.6, valign: "top", lineSpacingMultiple: 1.3 });
-  slide.addNotes("Primer checkpoint. Todos los equipos son Windows: descargar \"OpenCode Desktop — Windows (x64)\" desde opencode.ai/download. Tener los instaladores descargados de antemano (USB) por si el WiFi del aula va lento. Recalcar la ventaja frente a otros talleres: sin registro, sin tarjeta, sin keys — los modelos gratuitos vienen integrados. Avisar: al abrir el proyecto por primera vez, la app auto-instala las dependencias del plugin en `.opencode/` — necesita internet solo esa vez.");
-}
-
-// --- Slide 9 — Get the code ---
-{
-  const slide = contentSlide("Get the code");
-  slide.addText([
-    { text: "Option A — ", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.BLACK } },
-    { text: "Git for Windows", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
-    { text: " (PowerShell):", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-  ], { x: 0.5, y: 1.35, w: 12.33, h: 0.45 });
-  codeBox(slide,
-    "git clone <repo-url>\ncd C001",
-    { x: 0.5, y: 1.85, w: 12.33, h: 1.3, fontSize: 14 });
-  slide.addText([
-    { text: "Option B — ", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.BLACK } },
-    { text: "GitHub → Code → Download ZIP", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
-    { text: " → extract", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-  ], { x: 0.5, y: 3.35, w: 12.33, h: 0.45 });
-  slide.addText([
-    { text: "Then in OpenCode:  ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-    { text: "File → Open Folder… → starter/", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.BLACK } }
-  ], { x: 0.5, y: 3.95, w: 12.33, h: 0.5 });
-  slide.addText([
-    ...para([
-      { text: "starter/", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " → ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "your project", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
-      { text: " (with TODOs)", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ], bulletOpts({ fontSize: 15 })),
-    ...para([
-      { text: "solution/", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " → the teacher's copy. ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "Don't peek. 🙈", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
-    ], bulletOpts({ fontSize: 15 }))
-  ], { x: 0.5, y: 4.6, w: 12.33, h: 1.8, valign: "top", lineSpacingMultiple: 1.3 });
-  slide.addNotes("Dos caminos, ambos Windows: `git clone` en PowerShell (Git for Windows) o el botón \"Code → Download ZIP\" de GitHub y descomprimir. Después, todos abren la carpeta `starter/` en la app (File → Open Folder). Paseo de 30 segundos por el árbol: `AGENTS.md` (las reglas), `.opencode/tools` (las tools), `.opencode/plugins` (el guard), `.opencode/agents` (el agente), `database.sqlite`. Advertencia simpática sobre `solution/`: mirarla es hacerse spoiler a uno mismo.");
-}
-
-// --- Slide 10 — Pick a free model ---
-{
-  const slide = contentSlide("Pick a free model");
-  slide.addText([
-    ...para([
-      { text: "Model selector (bottom of the window) → ", options: { fontSize: 17, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "Big Pickle", options: { fontSize: 17, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
-    ], { paraSpaceAfter: 12 }),
-    ...para([
-      { text: "Other free options: ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "nemotron-3-ultra-free · deepseek-v4-flash-free", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } }
-    ], bulletOpts({ fontSize: 15 })),
-    ...para([{ text: "First run needs internet ONCE (OpenCode auto-installs plugin deps)" }], bulletOpts({ fontSize: 15 })),
-    ...para([
-      { text: "No provider available", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: "? Wait ~30 s and retry (free-tier rate limit)", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ], bulletOpts({ fontSize: 15 }))
-  ], { x: 0.5, y: 1.7, w: 12.33, h: 4.4, valign: "top", lineSpacingMultiple: 1.35 });
-  slide.addNotes("Enseñar el selector de modelos en la parte inferior. La primera ejecución descarga las dependencias del plugin en `.opencode/` — solo una vez y necesita red. Avisar del quirk verificado: los endpoints gratuitos hacen rate limit; si sale \"No provider available\", esperar medio minuto y reintentar, o cambiar a otro modelo gratis.");
-}
-
-// --- Slide 11 — First chat ---
-{
-  const slide = contentSlide("First chat");
-  slide.addText("New session → type:", {
-    x: 0.5, y: 1.5, w: 12.33, h: 0.5,
-    fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.BLACK
-  });
-  slide.addText([
-    ...para([{ text: "My name is <your name>. Remember it.", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } }], bulletOpts({ fontSize: 15 })),
-    ...para([{ text: "What is my name?", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } }], bulletOpts({ fontSize: 15 }))
-  ], { x: 0.5, y: 2.1, w: 12.33, h: 1.6, valign: "top", lineSpacingMultiple: 1.3 });
-  slide.addText([
-    { text: "It knows… ", options: { fontSize: 22, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-    { text: "for now. 😏", options: { fontSize: 22, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
-  ], { x: 0.5, y: 4.2, w: 12.33, h: 0.7 });
-  slide.addText([
-    { text: "Guided tutorial: type ", options: { fontSize: 12, fontFace: FONT.BODY, italic: true, color: X.GRAY } },
-    { text: "/module-1", options: { fontSize: 12, fontFace: FONT.MONO, italic: true, color: X.GREEN_DARK } },
-    { text: " — the AI becomes your step-by-step tutor (hints, not solutions).", options: { fontSize: 12, fontFace: FONT.BODY, italic: true, color: X.GRAY } }
-  ], { x: 0.5, y: 6.4, w: 12.33, h: 0.4 });
-  slide.addNotes("Que jueguen 1-2 minutos. NO explicar todavía: en el Módulo 1 abrirán una sesión nueva y descubrirán la amnesia por sí mismos. Presentar el tutorial guiado: el proyecto trae 4 comandos (`/module-1` … `/module-4`); al escribirlos, la IA se convierte en su tutor paso a paso — da pistas, no soluciones, y nunca hace el trabajo por ellos. Checkpoint: todos han hablado con el modelo al menos una vez. Fin del Setup (~10').");
-}
-
-// --- Slide 12 — The goldfish demo ---
-{
-  const slide = contentSlide("The goldfish demo");
-  const tx = { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK };
-  const mono = { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK };
-  slide.addText([
-    ...para([
-      { text: "Session 1:  ", options: { ...tx, bold: true, color: X.BLACK } },
-      { text: "My name is Alex", options: mono },
-      { text: "  →  ", options: tx },
-      { text: "What is my name?", options: mono },
-      { text: "  →  ✅ it knows", options: tx }
-    ], { paraSpaceAfter: 14 }),
-    ...para([
-      { text: "NEW session:  ", options: { ...tx, bold: true, color: X.BLACK } },
-      { text: "What is my name?", options: mono },
-      { text: "  →  🤷 forgotten", options: tx }
-    ], { paraSpaceAfter: 14 }),
-    ...para([{ text: "Back to session 1  →  it remembers again", options: tx }], { paraSpaceAfter: 24 }),
-    ...para([{ text: "Sessions ARE the context window.", options: { fontSize: 22, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }])
-  ], { x: 0.5, y: 1.7, w: 12.33, h: 4.6, valign: "top", lineSpacingMultiple: 1.3 });
-  slide.addText([
-    { text: "Guided tutorial: ", options: { fontSize: 12, fontFace: FONT.BODY, italic: true, color: X.GRAY } },
-    { text: "/module-1", options: { fontSize: 12, fontFace: FONT.MONO, italic: true, color: X.GREEN_DARK } }
-  ], { x: 0.5, y: 6.45, w: 12.33, h: 0.4 });
-  slide.addNotes("Demo en vivo proyectada. Pregunta guía: \"¿por qué la sesión nueva no sabe tu nombre?\" Respuesta: el modelo nunca supo nada — cada llamada solo ve el texto de la sesión actual; la memoria era la sesión, no el modelo. Conectar con la slide 6. Que lo repitan en sus equipos (5 min). Recordar que, si se quedan atrás, pueden lanzar el tutor guiado con `/module-1`.");
-}
-
-// --- Slide 13 — Watch the tokens + /compact ---
-{
-  const slide = contentSlide("Watch the tokens + /compact");
-  slide.addText([
-    ...para([
-      { text: "Every message makes the ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "token counter", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
-      { text: " grow — the app resends the whole session", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+      { text: "More effort", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " → better reasoning… slower, more tokens", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
     ], bulletOpts({ fontSize: 16 })),
     ...para([
-      { text: "The window has a budget → ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "Less effort", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " → fast and cheap… more mistakes", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ], bulletOpts({ fontSize: 16 })),
+    ...para([{ text: "Crank it up for hard problems; keep it fast for chat" }], bulletOpts({ fontSize: 16 }))
+  ], { x: 0.5, y: 1.7, w: 12.33, h: 4.2, valign: "top", lineSpacingMultiple: 1.4 });
+  slide.addNotes("Analogía: pensar despacio antes de hablar vs responder de corrido. En la app se puede ajustar el nivel de esfuerzo de razonamiento; para el taller el nivel por defecto va sobrado — mencionarlo como herramienta cuando un modelo falle en una tarea retorcida (y recordar que más esfuerzo = más tokens = más coste). (~2 min)");
+}
+
+// --- Slide 11 — Module 1 · Context in practice ---
+{
+  const slide = contentSlide("Module 1 · Context in practice");
+  slide.addText([
+    ...para([
+      { text: "A ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "session", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " IS the context window — its \"memory\"", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ], bulletOpts({ fontSize: 16 })),
+    ...para([
+      { text: "New session = ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "total amnesia", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
+    ], bulletOpts({ fontSize: 16 })),
+    ...para([
       { text: "/compact", options: { fontSize: 16, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } },
-      { text: " summarizes the history so it fits", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+      { text: " summarizes long history so it fits", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
     ], bulletOpts({ fontSize: 16 })),
     ...para([
-      { text: "After ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "/compact", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: ": the name survives, the token count drops", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+      { text: "AGENTS.md", options: { fontSize: 16, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } },
+      { text: " = the project's persistent memory (read every session)", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
     ], bulletOpts({ fontSize: 16 }))
   ], { x: 0.5, y: 1.8, w: 12.33, h: 4.2, valign: "top", lineSpacingMultiple: 1.4 });
-  slide.addNotes("Señalar el contador de tokens creciendo con cada mensaje: es la prueba visible de que la app reenvía toda la conversación. Conectar con la slide 5 (presupuesto). Ejecutar `/compact`: la app resume el historial viejo para que quepa en la ventana — la técnica profesional de verdad. El nombre sobrevive al resumen.");
+  slide.addNotes("Mapa del módulo (2 min, sin código): sesiones, `/compact`, `/init` → AGENTS.md. A continuación la demo grabada M1; después ellos hacen los experimentos con el tutor `/module-1` (nombre → nueva sesión → amnesia → volver → contador de tokens → /compact → /init).");
 }
 
-// --- Slide 14 — /init → AGENTS.md ---
+// --- Slide 12 — Module 1 · DEMO: an agent with NOTHING ---
 {
-  const slide = contentSlide("/init → AGENTS.md");
+  const slide = addDemoSlide({
+    title: "Module 1 · DEMO: an agent with NOTHING",
+    folder: "demos/m1-bare",
+    session: "DEMO M1 — No tools: the model invents the fleet report",
+    prompt: "Give me the morning status report for the e-bike fleet: total bikes,\nbroken bikes, and battery levels. Just give me the report, no questions.",
+    promptH: 1.3,
+    points: [
+      ...para([
+        { text: "Confident, detailed… and ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "100% invented", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+        { text: " (200 bikes?! the real fleet has 8)", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+      ], bulletOpts({ fontSize: 15 })),
+      ...para([
+        { text: "Ask the room: ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "\"how would you know?\"", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.BLACK } }
+      ], bulletOpts({ fontSize: 15 }))
+    ],
+    thenYou: "/module-1"
+  });
+  slide.addNotes("Coreografía: abrir la carpeta `demos/m1-bare` en OpenCode, abrir la sesión grabada `DEMO M1…` (instalada con `import_demo_sessions.py`). Recorrer prompt y salida: informe seguro de sí mismo — flota de 200 bicis, 10 averiadas, buckets de batería ordenados — TODO fabricado; la flota real tiene 8 bicis. Palabra del día: **hallucination**. Preguntar a la sala: \"¿cómo sabríais que miente?\". Después: `/module-1` (15').");
+}
+
+// --- Slide 13 — Module 2 · Grounding & hooks ---
+{
+  const slide = contentSlide("Module 2 · Grounding & hooks");
   slide.addText([
     ...para([
-      { text: "/init", options: { fontSize: 17, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } },
-      { text: " generates ", options: { fontSize: 17, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "AGENTS.md", options: { fontSize: 17, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } },
-      { text: " — project rules injected into EVERY session", options: { fontSize: 17, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ], { paraSpaceAfter: 14 }),
-    ...para([{ text: "Persistent memory that survives new sessions" }], bulletOpts({ fontSize: 16 })),
-    ...para([
-      { text: "starter/AGENTS.md", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " already describes the fleet, the DB and the ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "fleet_*", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " tools", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+      { text: "Grounding:", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " give the model the FACTS — ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "AGENTS.md", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
+      { text: " rule + read tools = the simplest RAG", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
     ], bulletOpts({ fontSize: 16 })),
-    ...para([{ text: "In Module 2 you will add a rule of your own" }], bulletOpts({ fontSize: 16 }))
-  ], { x: 0.5, y: 1.8, w: 12.33, h: 4.2, valign: "top", lineSpacingMultiple: 1.35 });
-  slide.addNotes("AGENTS.md es la memoria persistente del proyecto: cada sesión nueva la lee antes de empezar. Abrir `starter/AGENTS.md` y leerla con ellos: describe la flota, la base de datos SQLite y las cuatro tools. Ahí escribirán su regla de grounding en el Módulo 2 — es el mismo mecanismo que usa `/init`.");
+    ...para([
+      { text: "Hooks:", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " middleware that intercepts tool calls BEFORE they run", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ], bulletOpts({ fontSize: 16 })),
+    ...para([
+      { text: "Our guard ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "blocks dangerous commands — deterministically", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
+    ], bulletOpts({ fontSize: 16 }))
+  ], { x: 0.5, y: 1.8, w: 12.33, h: 4.2, valign: "top", lineSpacingMultiple: 1.4 });
+  slide.addNotes("Las dos defensas contra lo visto en M1 (2 min): (1) grounding — una regla en AGENTS.md obliga a llamar a las tools de lectura antes de responder, RAG en su versión mínima; (2) un hook (`tool.execute.before`) que inspecciona cada llamada a tool y puede bloquearla — no depende del humor del modelo.");
 }
 
-// --- Slide 15 — The confident liar (hallucination demo) ---
+// --- Slide 14 — Module 2 · DEMO: same prompt, different output ---
 {
-  const slide = contentSlide("The confident liar");
-  slide.addText("In an EMPTY window (no project), push it:", {
-    x: 0.5, y: 1.4, w: 12.33, h: 0.5,
-    fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK
+  const slide = addDemoSlide({
+    title: "Module 2 · DEMO: same prompt, different output",
+    folder: "demos/m2-grounded",
+    session: "DEMO M2 — Same prompt, grounded: real data via fleet tools",
+    prompt: null,
+    points: [
+      ...para([
+        { text: "The SAME prompt as M1 → ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "fleet_get_fleet_status", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
+        { text: " → ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "real data: 8 bikes · #3, #7 broken · #5 maintenance", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
+      ], bulletOpts({ fontSize: 15 })),
+      ...para([
+        { text: "Same prompt, different output — ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "grounding, not a smarter model", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.BLACK } }
+      ], bulletOpts({ fontSize: 15 })),
+      ...para([
+        { text: "LIVE: ", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.BLACK } },
+        { text: "run rm -rf /tmp/whatever", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
+        { text: " → the guard ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "blocks it", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+        { text: " ✅", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+      ], bulletOpts({ fontSize: 15 }))
+    ],
+    thenYou: "/module-2"
   });
-  codeBox(slide,
-    "You're my e-bike fleet manager with 8 bikes. Give me the morning\nstatus report: battery levels and which bikes are broken.\nJust give me the report, no questions.",
-    { x: 0.5, y: 2.0, w: 12.33, h: 1.9, fontSize: 13 });
-  slide.addText([
-    ...para([
-      { text: "→  A full report. Made up. Very confident. 😅", options: { fontSize: 17, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
-    ], { paraSpaceAfter: 10 }),
-    ...para([
-      { text: "Ask politely instead → it admits it has no data.  ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "Hallucination.", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.BLACK } }
-    ])
-  ], { x: 0.5, y: 4.3, w: 12.33, h: 1.8, valign: "top", lineSpacingMultiple: 1.3 });
-  slide.addText([
-    { text: "Guided tutorial: ", options: { fontSize: 12, fontFace: FONT.BODY, italic: true, color: X.GRAY } },
-    { text: "/module-2", options: { fontSize: 12, fontFace: FONT.MONO, italic: true, color: X.GREEN_DARK } }
-  ], { x: 0.5, y: 6.45, w: 12.33, h: 0.4 });
-  slide.addNotes("Demo en vivo FUERA del proyecto (ventana sin el proyecto abierto — dentro de `starter/` el modelo ve las tools y se porta demasiado bien). Verificado con Big Pickle: con el prompt insistente inventa un informe completo con IDs, baterías y averías; preguntado con educación, admite que no tiene datos. Ese contraste ES la lección: su trabajo es sonar plausible, no decir la verdad. Palabra del día: **hallucination**. Discusión de 1 minuto. Recordar que, si se quedan atrás, pueden lanzar el tutor guiado con `/module-2`.");
+  slide.addNotes("EL MONEY SHOT: abrir `demos/m2-grounded`, sesión `DEMO M2…` — es EXACTAMENTE la misma prompt que en M1, pero la salida cita la llamada a `fleet_get_fleet_status` y los datos reales (8 bicis, #3 y #7 averiadas, #5 en mantenimiento). Poner M1 y M2 una al lado de la otra. Después, demo EN VIVO del guard (es determinista): pedirle que ejecute `rm -rf /tmp/whatever` y ver el bloqueo del plugin. Ellos: `/module-2` (15').");
 }
 
-// --- Slide 16 — Grounding: the fix is a rule ---
+// --- Slide 15 — Module 3 · Function calling ---
 {
-  const slide = contentSlide("Grounding: the fix is a rule");
+  const slide = contentSlide("Module 3 · Function calling");
   slide.addText([
     ...para([
-      { text: "Open ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "starter/", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " → ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "How is the fleet? Which bikes are broken?", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } }
-    ], { paraSpaceAfter: 8 }),
+      { text: "A ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "tool", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " = YOUR function, described to the model (name + Zod schema = the contract)", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ], bulletOpts({ fontSize: 16 })),
     ...para([
-      { text: "→  It calls ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "fleet_get_fleet_status", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " → real data: ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "#3, #7 broken · #5 maintenance", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
-    ], { paraSpaceAfter: 14 }),
+      { text: "The model ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "PROPOSES", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " the call: ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "fleet_mark_bike_fixed {\"bike_id\": 3}", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } }
+    ], bulletOpts({ fontSize: 16 })),
     ...para([
-      { text: "TODO (Module 2)", options: { fontSize: 15, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } },
-      { text: "  in ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "starter/AGENTS.md", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: ":", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ])
-  ], { x: 0.5, y: 1.5, w: 12.33, h: 2.2, valign: "top", lineSpacingMultiple: 1.3 });
-  codeBox(slide,
-    "GROUNDING RULE: ALWAYS call the fleet_* tools before answering\nfleet questions. NEVER invent or guess fleet numbers.",
-    { x: 0.5, y: 3.9, w: 12.33, h: 1.4, fontSize: 13 });
-  slide.addNotes("La diferencia no es un modelo más listo: es acceso a datos reales — esto es grounding (RAG en su versión mínima). Las tools de lectura ya vienen hechas; su trabajo es la regla en el marcador `TODO (Module 2)` de AGENTS.md. Test: NUEVA sesión (los cambios solo aplican a sesiones nuevas), preguntar por la flota → la respuesta debe citar #3, #7 y #5 reales. Si un modelo ignora la regla: ponerla primera, en mayúsculas y nombrando las tools.");
+      { text: "YOUR code ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "executes", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " it — a real ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "UPDATE", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
+      { text: " via ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "bun:sqlite", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } }
+    ], bulletOpts({ fontSize: 16 })),
+    ...para([{ text: "The model proposes; your code disposes.", options: { fontSize: 18, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }], { paraSpaceAfter: 0 })
+  ], { x: 0.5, y: 1.8, w: 12.33, h: 4.2, valign: "top", lineSpacingMultiple: 1.4 });
+  slide.addNotes("Anatomía de una tool (2 min): `.opencode/tools/fleet.ts`; cada export se convierte en una tool `<fichero>_<export>`; el modelo ve la descripción y el esquema y decide cuándo llamarla y con qué argumentos; quien ejecuta el SQL es NUESTRO código. Seguridad: permisos ask/allow de la app + el guard del Módulo 2.");
 }
 
-// --- Slide 17 — Hooks: middleware around every action (shape flow) ---
+// --- Slide 16 — Module 3 · DEMO: a sentence writes to the DB ---
 {
-  const slide = contentSlide("Hooks: middleware around every action");
-  slide.addText([
-    { text: "A hook = ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-    { text: "code that intercepts a tool call BEFORE/AFTER it runs", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
-  ], { x: 0.5, y: 1.5, w: 12.33, h: 0.5 });
-
-  const boxY = 2.9, boxH = 1.3, boxW = 3.2;
-  const boxes = [
-    { x: 0.9, label: "user prompt → model", mono: false, active: false },
-    { x: 5.05, label: "plugin hook", mono: true, active: true },
-    { x: 9.2, label: "tool execution", mono: false, active: false }
-  ];
-  boxes.forEach(b => {
-    slide.addShape(pptx.ShapeType.roundRect, {
-      x: b.x, y: boxY, w: boxW, h: boxH,
-      fill: { color: b.active ? X.GREEN : X.WHITE },
-      line: b.active ? undefined : { color: X.GREEN, width: 1.5 },
-      rectRadius: 0.15
-    });
-    slide.addText(b.label, {
-      x: b.x, y: boxY, w: boxW, h: boxH,
-      fontSize: 16, fontFace: b.mono ? FONT.MONO : FONT.BODY,
-      bold: true,
-      color: b.active ? X.WHITE : X.BLACK,
-      align: "center", valign: "middle"
-    });
+  const slide = addDemoSlide({
+    title: "Module 3 · DEMO: a sentence writes to the DB",
+    folder: "demos/m3-tools",
+    session: "DEMO M3 — Function calling: 'Bike #3 is repaired' writes to the DB",
+    prompt: "Bike #3 is repaired.",
+    promptH: 0.9,
+    points: [
+      ...para([
+        { text: "One plain sentence → ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "fleet_mark_bike_fixed {\"bike_id\": 3}", options: { fontSize: 15, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } }
+      ], bulletOpts({ fontSize: 15 })),
+      ...para([
+        { text: "The DB actually changed: bike #3 → ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "ok", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
+        { text: ", its tickets → ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "closed", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } }
+      ], bulletOpts({ fontSize: 15 }))
+    ],
+    thenYou: "/module-3"
   });
-  // Arrows between boxes
-  [4.25, 8.4].forEach(ax => {
-    slide.addShape(pptx.ShapeType.rightArrow, {
-      x: ax, y: boxY + boxH / 2 - 0.25, w: 0.65, h: 0.5,
-      fill: { color: X.GREEN }
-    });
-  });
-  slide.addText("Your chance to inspect, allow… or BLOCK.", {
-    x: 0.5, y: 4.7, w: 12.33, h: 0.5,
-    fontSize: 14, fontFace: FONT.BODY, italic: true,
-    color: X.GRAY, align: "center"
-  });
-  slide.addNotes("Concepto de hook/middleware: un punto de intercepción donde tu código puede inspeccionar y modificar lo que el modelo está a punto de hacer. Patrón general del software, no solo de IA. En OpenCode los plugins envuelven cada ejecución de tool; el hook `tool.execute.before` puede bloquear — y es determinista: no depende del humor del modelo.");
+  slide.addNotes("Abrir `demos/m3-tools`, sesión `DEMO M3…`. Señalar: el modelo eligió la tool Y el argumento por sí solo; una frase en inglés se convirtió en un UPDATE real (la BD de la demo está reseteada a pristine — la sesión grabada es la prueba). Ellos implementan las dos tools de escritura con el tutor `/module-3` (15').");
 }
 
-// --- Slide 18 — The guard plugin ---
+// --- Slide 17 — Module 4 · Agents ---
 {
-  const slide = contentSlide("The guard plugin");
-  slide.addText([
-    { text: ".opencode/plugins/guard.ts", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-    { text: "  —  ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-    { text: "TODO (Module 2)", options: { fontSize: 16, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } }
-  ], { x: 0.5, y: 1.4, w: 12.33, h: 0.5 });
-  codeBox(slide,
-    "\"tool.execute.before\": bash command contains\n  \"rm -rf\" or \"drop table\"  →  throw Error  →  BLOCKED",
-    { x: 0.5, y: 2.0, w: 12.33, h: 1.4, fontSize: 13 });
+  const slide = contentSlide("Module 4 · Agents");
   slide.addText([
     ...para([
-      { text: "Demo:  ", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.BLACK } },
-      { text: "Run this exact shell command: rm -rf /tmp/whatever", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } }
-    ], { paraSpaceAfter: 8 }),
+      { text: "Chatbot:", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GRAY } },
+      { text: " you talk, it answers.  ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "Agent:", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+      { text: " you give a GOAL, it works", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+    ], bulletOpts({ fontSize: 16 })),
     ...para([
-      { text: "→  ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "Blocked by fleet guard", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
-      { text: "  ✅", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ])
-  ], { x: 0.5, y: 3.9, w: 12.33, h: 1.8, valign: "top", lineSpacingMultiple: 1.3 });
-  slide.addNotes("Implementación (~10 min): solo inspeccionar la tool `bash`, leer `output.args.command`, pasarlo a minúsculas y, si contiene algo de `BLOCKED`, lanzar el Error — el modelo ve el mensaje de bloqueo en vez del resultado. Test en vivo: pedirle que ejecute `rm -rf /tmp/whatever` y ver el bloqueo. Nueva sesión para recargar el plugin. Lección: el modelo a veces se niega por sí solo (con `drop table` suele hacerlo), pero el guard bloquea SIEMPRE — es la red de seguridad determinista.");
+      { text: "The loop: ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "observe → decide → act → repeat", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
+    ], bulletOpts({ fontSize: 16 })),
+    ...para([
+      { text: "steps: 20", options: { fontSize: 16, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } },
+      { text: " = the safety fuse · permissions: ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+      { text: "ask / allow / deny", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.BLACK } }
+    ], bulletOpts({ fontSize: 16 }))
+  ], { x: 0.5, y: 1.8, w: 12.33, h: 4.2, valign: "top", lineSpacingMultiple: 1.4 });
+  slide.addNotes("El salto conceptual (2 min): el bucle deja de ser humano↔IA y pasa a ser IA↔tools. El agente `fleet-manager` tiene SOLO las tools `fleet_*` (sin bash/write/edit) y un tope de 20 pasos como fusible contra bucles infinitos. Los permisos de la app son la otra puerta de seguridad.");
 }
 
-// --- Slide 19 — Talking ≠ doing ---
+// --- Slide 18 — Module 4 · DEMO: let it loose ---
 {
-  const slide = contentSlide("Talking ≠ doing");
-  slide.addText([
-    ...para([
-      { text: "Try:  ", options: { fontSize: 18, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "\"Bike #3 is repaired\"", options: { fontSize: 18, fontFace: FONT.BODY, bold: true, color: X.BLACK } }
-    ], { paraSpaceAfter: 12 }),
-    ...para([{ text: "→  The AI agrees… and the database doesn't change. 🤔", options: { fontSize: 18, fontFace: FONT.BODY, color: X.GRAY_DARK } }], { paraSpaceAfter: 24 }),
-    ...para([
-      { text: "Text is not action. ", options: { fontSize: 24, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
-      { text: "It needs a WRITE tool.", options: { fontSize: 24, fontFace: FONT.BODY, color: X.BLACK } }
-    ])
-  ], { x: 0.5, y: 2.0, w: 12.33, h: 4.0, valign: "top", lineSpacingMultiple: 1.3 });
-  slide.addText([
-    { text: "Guided tutorial: ", options: { fontSize: 12, fontFace: FONT.BODY, italic: true, color: X.GRAY } },
-    { text: "/module-3", options: { fontSize: 12, fontFace: FONT.MONO, italic: true, color: X.GREEN_DARK } }
-  ], { x: 0.5, y: 6.45, w: 12.33, h: 0.4 });
-  slide.addNotes("Nueva limitación. El proyecto solo trae tools de lectura: por muy bien que hable, sin una tool de escritura no puede ejecutar el `UPDATE`. Pregunta puente: \"¿cómo le daríamos manos de verdad?\" La respuesta: custom tools propias. Recordar que, si se quedan atrás, pueden lanzar el tutor guiado con `/module-3`.");
-}
-
-// --- Slide 20 — Custom tools anatomy ---
-{
-  const slide = contentSlide("Custom tools anatomy");
-  slide.addText(".opencode/tools/fleet.ts", {
-    x: 0.5, y: 1.4, w: 12.33, h: 0.5,
-    fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK
+  const slide = addDemoSlide({
+    title: "Module 4 · DEMO: let it loose",
+    folder: "demos/m4-agent",
+    session: "DEMO M4 — Autonomous agent: resolves all tickets in a loop",
+    prompt: "Resolve all pending maintenance tickets",
+    promptH: 0.9,
+    points: [
+      ...para([
+        { text: "The loop: ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "list → assign → fix ×3", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+        { text: " (ticket #4 closes along the way)", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+      ], bulletOpts({ fontSize: 15 })),
+      ...para([
+        { text: "It ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
+        { text: "STOPS BY ITSELF", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
+        { text: " when none remain ✅", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
+      ], bulletOpts({ fontSize: 15 }))
+    ],
+    thenYou: "/module-4"
   });
-  codeBox(slide,
-    "export const mark_bike_fixed = tool({ description, args, execute })\n//  → tool name: fleet_mark_bike_fixed",
-    { x: 0.5, y: 2.0, w: 12.33, h: 1.4, fontSize: 13 });
-  slide.addText([
-    ...para([
-      { text: "description", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " + Zod ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "args", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " schema = the contract the model sees", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ], bulletOpts({ fontSize: 15 })),
-    ...para([
-      { text: "execute()", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " = YOUR code, real SQLite (", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "bun:sqlite", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: ")", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ], bulletOpts({ fontSize: 15 })),
-    ...para([{ text: "The model proposes; your code disposes.", options: { fontSize: 17, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }], { paraSpaceAfter: 0 })
-  ], { x: 0.5, y: 3.8, w: 12.33, h: 2.6, valign: "top", lineSpacingMultiple: 1.35 });
-  slide.addNotes("Anatomía de una tool: OpenCode carga cada archivo de `.opencode/tools/` y cada export se convierte en una tool llamada `<fichero>_<export>`. El modelo solo ve la descripción y el esquema de argumentos, y decide cuándo llamarla y con qué datos; quien ejecuta el SQL es NUESTRO código. Recordar la implicación de seguridad: nunca ejecutar a ciegas — de ahí el guard y los permisos ask/allow de la app.");
+  slide.addNotes("Abrir `demos/m4-agent`, sesión `DEMO M4…`. Recorrer el bucle: `fleet_list_pending_tickets` → `fleet_assign_mechanic` → `fleet_mark_bike_fixed`, tres veces (tickets #1-#3; el #4 se cierra solo al arreglar la bici #3), y se DETIENE SOLO con un resumen. Mostrar después el archivo `.opencode/agents/fleet-manager.md`. Ellos completan el agente con `/module-4` (15').");
 }
 
-// --- Slide 21 — Build it (Module 3) ---
-{
-  const slide = contentSlide("Build it (Module 3)");
-  const num = { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK };
-  const tx = { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK };
-  const mono = { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK };
-  slide.addText([
-    ...para([
-      { text: "TODO (Module 3)", options: { fontSize: 17, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } },
-      { text: "  in ", options: { fontSize: 17, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "fleet.ts", options: { fontSize: 17, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: ":", options: { fontSize: 17, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ], { paraSpaceAfter: 14 }),
-    ...para([
-      { text: "1.  ", options: num },
-      { text: "assign_mechanic", options: mono },
-      { text: " → check the ticket, then ", options: tx },
-      { text: "UPDATE tickets SET mechanic, status='assigned'", options: mono }
-    ], { paraSpaceAfter: 12 }),
-    ...para([
-      { text: "2.  ", options: num },
-      { text: "mark_bike_fixed", options: mono },
-      { text: " → ", options: tx },
-      { text: "UPDATE bikes → 'ok'", options: mono },
-      { text: " + close its open/assigned tickets", options: tx }
-    ], { paraSpaceAfter: 20 }),
-    ...para([
-      { text: "Test:  ", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.BLACK } },
-      { text: "Bike #3 is repaired. Use the fleet tools.", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: "  →  ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "check the DB", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
-    ])
-  ], { x: 0.5, y: 1.6, w: 12.33, h: 4.8, valign: "top", lineSpacingMultiple: 1.3 });
-  slide.addNotes("Es la parte más \"de verdad\" del taller (~12-15 min). Las pistas están en los comentarios del stub: el `SELECT bike_id`, los dos `UPDATE` y el JSON de retorno. Recordatorios: abrir la BD con `openDb(context.directory)`, nueva sesión tras editar, y click en *allow* cuando la app pida permiso. Test verificado: bike #3 pasa a `ok` y los tickets #1 y #4 a `closed`.");
-}
-
-// --- Slide 22 — Chatbot vs agent (two columns + loop code box) ---
-{
-  const slide = contentSlide("Chatbot vs agent");
-  // Left: Chatbot
-  slide.addText("Chatbot", {
-    x: 0.5, y: 1.4, w: 5.9, h: 0.5,
-    fontSize: 20, fontFace: FONT.BODY, bold: true, color: X.GRAY
-  });
-  slide.addText("You talk, it answers.", {
-    x: 0.5, y: 1.95, w: 5.9, h: 0.5,
-    fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK
-  });
-  // Right: Agent
-  slide.addText("Agent", {
-    x: 6.9, y: 1.4, w: 5.9, h: 0.5,
-    fontSize: 20, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK
-  });
-  slide.addText([
-    { text: "You give a ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-    { text: "GOAL", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
-    { text: ", it works.", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-  ], { x: 6.9, y: 1.95, w: 5.9, h: 0.5 });
-  // Divider
-  slide.addShape(pptx.ShapeType.rect, {
-    x: 6.55, y: 1.4, w: 0.02, h: 1.2,
-    fill: { color: X.GRAY_LIGHT }
-  });
-  // Agent loop code box
-  codeBox(slide,
-    "loop: observe → decide → act → repeat\n      (until done… or out of steps)",
-    { x: 0.5, y: 3.0, w: 12.33, h: 1.4, fontSize: 14 });
-  slide.addText([
-    { text: "Your only input:  ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-    { text: "\"Resolve all pending maintenance tickets\"", options: { fontSize: 15, fontFace: FONT.BODY, italic: true, bold: true, color: X.BLACK } }
-  ], { x: 0.5, y: 4.8, w: 12.33, h: 0.5 });
-  slide.addText([
-    { text: "Guided tutorial: ", options: { fontSize: 12, fontFace: FONT.BODY, italic: true, color: X.GRAY } },
-    { text: "/module-4", options: { fontSize: 12, fontFace: FONT.MONO, italic: true, color: X.GREEN_DARK } }
-  ], { x: 0.5, y: 6.45, w: 12.33, h: 0.4 });
-  slide.addNotes("El salto conceptual: el bucle deja de ser humano↔IA y pasa a ser IA↔tools. El modelo decide QUÉ tool usar en cada paso según el estado, y para cuando el objetivo está cumplido… o cuando se agota el presupuesto de pasos — el fusible contra bucles infinitos. Recordar que, si se quedan atrás, pueden lanzar el tutor guiado con `/module-4`.");
-}
-
-// --- Slide 23 — Agent anatomy ---
-{
-  const slide = contentSlide("Agent anatomy");
-  slide.addText([
-    { text: ".opencode/agents/fleet-manager.md", options: { fontSize: 16, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-    { text: "  —  ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-    { text: "TODO (Module 4)", options: { fontSize: 16, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } }
-  ], { x: 0.5, y: 1.4, w: 12.33, h: 0.5 });
-  slide.addText([
-    ...para([
-      { text: "description", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " + ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "mode: primary", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " → shows up in the agent selector", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ], bulletOpts({ fontSize: 15 })),
-    ...para([
-      { text: "steps: 20", options: { fontSize: 15, fontFace: FONT.MONO, bold: true, color: X.GREEN_DARK } },
-      { text: " → the safety fuse", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ], bulletOpts({ fontSize: 15 })),
-    ...para([
-      { text: "tools:", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: " → ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "fleet_*: true", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: "  ·  ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "write / edit / bash: false", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } }
-    ], bulletOpts({ fontSize: 15 })),
-    ...para([
-      { text: "Body = the loop:  ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "list → assign → fix → repeat → stop with a summary", options: { fontSize: 15, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } }
-    ], bulletOpts({ fontSize: 15 }))
-  ], { x: 0.5, y: 2.1, w: 12.33, h: 4.0, valign: "top", lineSpacingMultiple: 1.4 });
-  slide.addNotes("Recorrer el frontmatter YAML: `description` (una línea), `mode: primary` (si no, no aparece en el selector), `steps: 20` y el mapa de tools — aquí directamente deshabilitamos `write`/`edit`/`bash` (los permisos de OpenCode van ask/allow/deny; el agente solo necesita las `fleet_*`). El cuerpo es el system prompt: hay que decir EXPLÍCITAMENTE \"vuelve al paso 1 hasta que no queden tickets\" o el modelo declara victoria tras el primero. Nueva sesión tras editar.");
-}
-
-// --- Slide 24 — Let it loose ---
-{
-  const slide = contentSlide("Let it loose");
-  slide.addText([
-    { text: "Agent selector → ", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-    { text: "fleet-manager", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
-    { text: " → send:", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-  ], { x: 0.5, y: 1.4, w: 12.33, h: 0.5 });
-  codeBox(slide,
-    "Resolve all pending maintenance tickets",
-    { x: 0.5, y: 2.0, w: 12.33, h: 1.0, fontSize: 15 });
-  slide.addText([
-    ...para([
-      { text: "Watch it:  ", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.BLACK } },
-      { text: "list tickets → assign mechanic → fix bike → repeat ×3 → stops on its own", options: { fontSize: 16, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK } },
-      { text: "  ✅", options: { fontSize: 16, fontFace: FONT.BODY, color: X.GRAY_DARK } }
-    ], { paraSpaceAfter: 12 }),
-    ...para([
-      { text: "Check the DB:  all bikes ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "ok", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } },
-      { text: ", all tickets ", options: { fontSize: 15, fontFace: FONT.BODY, color: X.GRAY_DARK } },
-      { text: "closed", options: { fontSize: 15, fontFace: FONT.MONO, color: X.GRAY_DARK } }
-    ])
-  ], { x: 0.5, y: 3.6, w: 12.33, h: 2.2, valign: "top", lineSpacingMultiple: 1.35 });
-  slide.addNotes("Gran final: ejecutar el agente en pantalla grande (~5 min de run). Verificado: itera tres veces (elige un mecánico, p.ej. \"Carlos\") y se detiene solo con un resumen; incluso reporta que el ticket #4 se cerró automáticamente al arreglar la bici #3. Si para tras un solo ticket: el prompt del bucle es perezoso — buena lección. Si bajan `steps` y se trunca: lección sobre presupuestos de bucle.");
-}
-
-// --- Slide 25 — Today you built ---
+// --- Slide 19 — Today you built ---
 {
   const slide = contentSlide("Today you built");
   const concept = { fontSize: 18, fontFace: FONT.BODY, bold: true, color: X.GREEN_DARK };
@@ -1000,13 +791,13 @@ function para(runs, opts = {}) {
   slide.addText([
     ...para([
       { text: "Memory", options: concept },
-      { text: " (sessions & AGENTS.md)", options: desc },
+      { text: " (context)", options: desc },
       { text: "   ·   ", options: sep },
       { text: "Truth", options: concept },
       { text: " (grounding)", options: desc },
       { text: "   ·   ", options: sep },
       { text: "Hands", options: concept },
-      { text: " (custom tools)", options: desc },
+      { text: " (tools)", options: desc },
       { text: "   ·   ", options: sep },
       { text: "Autonomy", options: concept },
       { text: " (agents)", options: desc }
@@ -1017,10 +808,10 @@ function para(runs, opts = {}) {
     fontSize: 28, fontFace: FONT.BODY, bold: true,
     color: X.BLACK, align: "center"
   });
-  slide.addNotes("Recap con la frase de cierre: los 4 conceptos de hoy son los mismos que usan ChatGPT, Copilot y cualquier agente serio. Ideas para casa: añadir una tool nueva (¿`order_parts`?), endurecer el guard con más patrones o probar otro modelo gratis. Q&A y despedida (5 min).");
+  slide.addNotes("Recap: los 4 conceptos de hoy son los mismos que usan ChatGPT, Copilot y cualquier agente serio. Ideas para casa: añadir una tool nueva (¿`order_parts`?), endurecer el guard con más patrones o probar otro modelo gratis. Q&A y despedida (5 min).");
 }
 
-// --- Slide 26 — Closing ---
+// --- Slide 20 — Closing ---
 {
   const slide = addClosingSlide(pptx, {
     title: "Now go build.",

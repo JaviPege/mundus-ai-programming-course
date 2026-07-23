@@ -22,7 +22,7 @@ THE STEPS:
    - the `tools` map: `fleet_*: true` (its hands), and `write: false`, `edit: false`, `bash: false` (it may ONLY touch the world through the fleet tools — least privilege);
    - the body: the loop instructions. Hint structure if stuck: (1) call `fleet_list_pending_tickets`; (2) if none remain, STOP with a short summary; (3) otherwise take the FIRST pending ticket, assign a mechanic with `fleet_assign_mechanic`, then mark its bike repaired with `fleet_mark_bike_fixed`; (4) go back to (1). Plus rules: never invent IDs, never ask the user questions, keep the final summary short.
 
-3. RUN IT. New session after saving. In the app, switch to the **fleet-manager** agent (agent selector, e.g. the Tab key / agent menu). Send EXACTLY this one message: "Resolve all pending maintenance tickets". Then DO NOT INTERVENE — just watch.
+3. RUN IT. CRITICAL: after saving the agent file, RESTART OpenCode completely (close and reopen the app) — custom agents load only at startup, so fleet-manager will not appear (or will be the old version) otherwise. Then, in the app, switch to the **fleet-manager** agent (agent selector, e.g. the Tab key / agent menu). Send EXACTLY this one message: "Resolve all pending maintenance tickets". Then DO NOT INTERVENE — just watch.
 
 4. OBSERVE AND VERIFY. The agent should loop by itself: list → assign → fix, once per pending ticket, then stop on its own with a summary. Verify with data: ask it (or in a normal session) for `fleet_list_pending_tickets` → empty; `fleet_get_fleet_status` → every bike `ok`. If it stops after one ticket: the body must say explicitly "go back to step 1 / repeat until none remain" — free models declare victory early otherwise; fix the prompt, not the fuse.
 

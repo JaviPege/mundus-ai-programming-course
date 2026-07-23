@@ -40,6 +40,33 @@ Student machines are all **Windows**. Per machine:
    Copy-Item tools\database.pristine.sqlite starter\database.sqlite -Force
    Copy-Item tools\database.pristine.sqlite solution\database.sqlite -Force
    ```
+6. Install the pre-fabricated demo sessions (see next section): close
+   OpenCode, run `py tools\import_demo_sessions.py` from the repo root,
+   reopen OpenCode and confirm the four `DEMO M…` sessions appear.
+
+## Pre-fabricated demo sessions
+
+`demos/` contains one project folder per module, each with a **recorded
+demo session** (title starts with `DEMO M`) so the classroom demo is
+deterministic: theory block → open the folder in OpenCode → open the
+`DEMO M…` session. No live-model risk.
+
+- `demos/m1-bare/` — no tools: the model **invents** the fleet report.
+- `demos/m2-grounded/` — **same prompt**, grounded: real data via fleet
+  tools (the M1-vs-M2 contrast is the money shot).
+- `demos/m3-tools/` — `Bike #3 is repaired.` becomes a DB write.
+- `demos/m4-agent/` — the `fleet-manager` agent resolves all tickets in a
+  loop and stops by itself.
+
+Import once per instructor machine (OpenCode fully closed):
+
+```
+py tools\import_demo_sessions.py
+```
+
+Idempotent; backs up `opencode.db` first; only touches the `DEMO M…`
+sessions. Full presentation flow, per-demo talking points, regeneration
+instructions and the live-fallback prompts: **`demos/README.md`**.
 
 ## Resetting between sessions
 
@@ -80,6 +107,16 @@ it auto-installs the plugin dependency; the included
   (`ask`/`allow`). Teach students to click *allow* for the `fleet_*`
   tools — or to pick "always allow" for the session. This is a feature,
   not a bug: it is the same gate the guard plugin reinforces.
+- **No hot reload — restart after every `.opencode` edit (VERIFIED).**
+  Plugins, custom tools and custom agents load ONLY at startup. A new
+  session is NOT enough: after editing `guard.ts`, `fleet.ts` or
+  `agents/fleet-manager.md`, students must close and reopen OpenCode,
+  or their change silently does nothing (the old code keeps running).
+  Symptom: "the tool still raises the TODO stub" or "the guard doesn't
+  block" → they forgot to restart. Editing `AGENTS.md` is the
+  exception: it only needs a NEW session, not a restart.
+  The tutor commands (`/module-2` … `/module-4`) already tell students
+  this at the right moment — reinforce it when you see them stuck.
 
 ## Module 1 — Context window (15', no code)
 
@@ -137,6 +174,12 @@ reliably there. Do the demo in two steps:
 
 Discussion: the difference is access to real data (RAG/grounding), not
 a smarter model.
+
+> Note — the student-facing version is different on purpose: the
+> `/module-2` tutor command cannot send students to an empty folder
+> mid-exercise, so it runs the hallucination demo as a roleplay INSIDE
+> the tutor chat (the tutor invents the report without calling tools).
+> Both work; the pre-fabricated `DEMO M1` session is the third option.
 
 ### 2b. The grounding rule — students edit `starter/AGENTS.md`
 
@@ -200,22 +243,27 @@ them and with which arguments.
 
 Students edit `starter/.opencode/tools/fleet.ts`, markers
 `// TODO (Module 3):` in `assign_mechanic` and `mark_bike_fixed`.
-Both use `bun:sqlite` (built into OpenCode's runtime) and open the DB
-at `path.join(context.directory, "database.sqlite")`.
+The DB access uses a small dual-import block (`node:sqlite` for the
+desktop app, `bun:sqlite` for the CLI) — REQUIRED, because the two
+OpenCode engines cannot load each other's SQLite module (verified the
+hard way: a static `bun:sqlite` import crashes the desktop app, a
+static `node:sqlite` import crashes the CLI). Everything after the
+import uses `.prepare()`, which both APIs share, and opens the DB at
+`path.join(context.directory, "database.sqlite")`.
 
 Intended solutions (in `solution/`):
 
 ```ts
 // assign_mechanic
-const ticket = db.query("SELECT bike_id FROM tickets WHERE id = ?").get(args.ticket_id);
+const ticket = db.prepare("SELECT bike_id FROM tickets WHERE id = ?").get(args.ticket_id);
 if (!ticket) return JSON.stringify({ ok: false, error: "ticket not found" });
-db.query("UPDATE tickets SET mechanic = ?, status = 'assigned' WHERE id = ?")
+db.prepare("UPDATE tickets SET mechanic = ?, status = 'assigned' WHERE id = ?")
   .run(args.mechanic, args.ticket_id);
 return JSON.stringify({ ok: true, ticket_id: args.ticket_id, bike_id: ticket.bike_id, mechanic: args.mechanic });
 
 // mark_bike_fixed
-db.query("UPDATE bikes SET status = 'ok' WHERE id = ?").run(args.bike_id);
-db.query("UPDATE tickets SET status = 'closed' WHERE bike_id = ? AND status IN ('open','assigned')")
+db.prepare("UPDATE bikes SET status = 'ok' WHERE id = ?").run(args.bike_id);
+db.prepare("UPDATE tickets SET status = 'closed' WHERE bike_id = ? AND status IN ('open','assigned')")
   .run(args.bike_id);
 return JSON.stringify({ ok: true, bike_id: args.bike_id, status: "ok" });
 ```

@@ -7,21 +7,30 @@
 //   fleet_get_fleet_status, fleet_list_pending_tickets,
 //   fleet_assign_mechanic, fleet_mark_bike_fixed
 //
-// The tools run inside OpenCode's Bun runtime, so we can use the
-// built-in "bun:sqlite" module — no npm install needed.
-
+// The DB module is SQLite, built into OpenCode — no npm install.
+// IMPORTANT: OpenCode runs this file in TWO different engines:
+//   - the desktop app  → Node (Electron) → has "node:sqlite"
+//   - the CLI/terminal → Bun               → has "bun:sqlite"
+// Neither engine can load the other's module, so we pick whichever
+// exists here. Both APIs understand .prepare(), so the rest of the
+// file is identical either way.
 import { tool } from "@opencode-ai/plugin";
-import { Database } from "bun:sqlite";
-// node:path works on every OS (Windows, macOS, Linux) and in OpenCode's
-// Bun runtime — path.join() builds the correct separators automatically.
+let Db: any;
+try {
+  Db = (await import("node:sqlite")).DatabaseSync; // desktop app (Node)
+} catch {
+  Db = (await import("bun:sqlite")).Database; // CLI (Bun)
+}
+// node:path works on every OS (Windows, macOS, Linux) — path.join()
+// builds the correct separators automatically.
 import path from "node:path";
 
 // Every execute() opens the database on its own.
 // context.directory is the folder where the OpenCode session runs
 // (the project root), so the DB is always found no matter where
 // the tool is called from.
-function openDb(directory: string): Database {
-  return new Database(path.join(directory, "database.sqlite"));
+function openDb(directory: string): any {
+  return new Db(path.join(directory, "database.sqlite"));
 }
 
 // ── READ tools (given ready-made — used in Module 2) ──────────────
@@ -33,7 +42,7 @@ export const get_fleet_status = tool({
     const db = openDb(context.directory);
     try {
       const rows = db
-        .query("SELECT id, model, battery_pct, status FROM bikes ORDER BY id")
+        .prepare("SELECT id, model, battery_pct, status FROM bikes ORDER BY id")
         .all();
       return JSON.stringify(rows);
     } finally {
@@ -49,7 +58,7 @@ export const list_pending_tickets = tool({
     const db = openDb(context.directory);
     try {
       const rows = db
-        .query(
+        .prepare(
           "SELECT id AS ticket_id, bike_id, description, mechanic, status " +
             "FROM tickets WHERE status IN ('open','assigned') ORDER BY id"
         )

@@ -18,6 +18,7 @@ tools/seed_db.py                ← regenerates the SQLite database with sample 
 tools/database.pristine.sqlite  ← clean copy of the database, for easy resets
 starter/                        ← the project you open in OpenCode (with TODOs)
 solution/                       ← the reference solution, fully implemented (don't peek!)
+demos/                          ← pre-fabricated demo sessions, one folder per module (instructor)
 ```
 
 ## Setup (10 minutes) — Windows
