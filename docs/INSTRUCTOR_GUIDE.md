@@ -117,6 +117,12 @@ it auto-installs the plugin dependency; the included
   exception: it only needs a NEW session, not a restart.
   The tutor commands (`/module-2` … `/module-4`) already tell students
   this at the right moment — reinforce it when you see them stuck.
+- **`ERR_MODULE_NOT_FOUND: @opencode-ai/plugin` (desktop app).** The
+  desktop resolves the plugin package from `node_modules`; the repo
+  ships `.opencode/package.json` in every project so OpenCode
+  auto-installs it (bun install) on first open — needs internet once.
+  If it appears anyway: close and reopen the project and wait a few
+  seconds for the install before sending the first message.
 
 ## Module 1 — Context window (15', no code)
 
