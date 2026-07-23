@@ -12,3 +12,7 @@ node_modules/
 
 # Office lock files
 ~$*
+
+# OpenCode auto-installed lockfiles
+**/.opencode/package-lock.json
+.DS_Store
