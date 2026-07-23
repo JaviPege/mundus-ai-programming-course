@@ -16,7 +16,8 @@ export const FleetGuard = async () => {
   // (matching is case-insensitive — the command is lowercased first).
   // Students: feel free to add more patterns here!
   const BLOCKED = [
-    "rm -rf",      // Unix: recursive force delete
+    "rm -r",       // Unix: recursive delete (covers rm -r, rm -rf, rm -rfv…)
+    "rmdir ",      // Unix: remove directory (trailing space on purpose)
     "del /s",      // Windows cmd: recursive delete
     "rmdir /s",    // Windows cmd: recursive directory delete
     "remove-item", // Windows PowerShell: delete files/folders

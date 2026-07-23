@@ -232,19 +232,31 @@ Intended solution (in `solution/`):
 
 Test: ask the model to *"Run this exact shell command:
 `rm -rf /tmp/whatever`"*. Verified: the bash call fails with
-`Error: Blocked by fleet guard: the command contains "rm -rf"` and the
+`Error: Blocked by fleet guard: the command contains "rm -r"` and the
 model reports the block. The command is intercepted **before it ever
 runs**, so this demo is safe on any OS, Windows included. The `BLOCKED`
-list in the file already covers both worlds (`rm -rf`, `del /s`,
-`rmdir /s`, `remove-item`, `format `, `drop table`); matching is
-case-insensitive (the command is lowercased before matching). Note the
-model may refuse `drop table` prompts itself (see quirks) — the hook is
-the deterministic backstop.
+list in the file already covers both worlds (`rm -r`, `rmdir `,
+`del /s`, `rmdir /s`, `remove-item`, `format `, `drop table`); matching
+is case-insensitive (the command is lowercased before matching). Note
+the model may refuse `drop table` prompts itself (see quirks) — the
+hook is the deterministic backstop.
 
-**Failure modes:** edits to the plugin require a **new session** (or
-app restart) to load. If the hook never fires, check the file is
-exactly `.opencode/plugins/guard.ts` and the export is a named export
-(`export const FleetGuard = ...`).
+**Phrasing matters (verified the fun way).** If you ask loosely
+("delete the folder whatever in /tmp"), the model picks its OWN
+command — Big Pickle once chose `rmdir /tmp/whatever` and sailed past
+a list that only had `rm -rf`. Two lessons for the class: (1) for the
+demo, dictate the exact command; (2) pattern lists are inherently
+brittle — a guard like this is a teaching device and a backstop, not
+real sandboxing. The shipped list now covers the common synonyms
+(`rm -r` catches `rm -rf*`, bare `rmdir ` with trailing space), but let
+students find a bypass themselves if they're sharp: that's the best
+security lesson in the whole workshop.
+
+**Failure modes:** edits to the plugin require an **app restart** to
+load (no hot reload — see quirks). If the hook never fires, check the
+file is exactly `.opencode/plugins/guard.ts`, the export is a named
+export (`export const FleetGuard = ...`), and which command the model
+ACTUALLY tried (it may differ from what you had in mind).
 
 ## Module 3 — Function calling (20')
 
